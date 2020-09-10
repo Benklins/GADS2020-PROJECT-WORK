@@ -1,0 +1,214 @@
+
+#  Getting Started with VPC Networking
+
+
+## Objectives:
+
+In this lab, you will learn how to perform the following tasks:
+
+   - Explore the default VPC network
+
+   - Create an auto mode network with firewall rules
+
+   - Create VM instances using Compute Engine
+
+   - Explore the connectivity for VM instances
+
+#Task 1: Explore the default network
+
+## Steps:
+
+      i.  View the subnets by running the command:
+
+          * gcloud compute networks subnets list
+
+
+      ii.  View the default routes by running the command:
+    
+         * gcloud compute routes list --filter="network=default"
+ 
+    
+      iii.  View the firewall rules by running the command:
+  
+         * gcloud compute firewall-rules list --filter network=default
+
+
+      iv. Delete the default network Firewall rules by running the commands:
+
+         gcloud compute firewall-rules delete default-allow-icmp 
+         gcloud compute firewall-rules delete default-allow-rdp
+         gcloud compute firewall-rules delete default-allow-ssh 
+         gcloud compute firewall-rules delete default-allow-internal
+
+       v.  Delete the default network by running the command:
+
+          * gcloud compute networks delete default
+    
+       - Confirm the deletion of the default network by running the commands:
+
+          * gcloud compute routes list --filter="network=default"
+
+          * gcloud compute firewall-rules list --filter network=default
+
+      vi. Verify that you cannot create a VM instance without a VPC network by running the command:
+
+          * gcloud compute instances create my-vm-1 --machine-type "n1-standard-1" --image-project "debian-cloud" --image "debian-9-stretch-v20190123" --subnet          "default" 
+
+          -result: Cannot create a VM instance without a VPC network!
+
+
+#Task 2: Create a VPC network and VM instances
+
+##steps:
+
+   a.  Create an auto mode VPC network with Firewall rules
+
+       i. Replicate the default network by creating an auto mode network by running the command:
+  
+         * gcloud compute networks create mynetwork --subnet-mode=auto --bgp-routing-mode=global  
+
+
+      ii. Create firewall rules for the mynetwork network by running the commands:
+
+         * gcloud compute firewall-rules create mynetwork-allow-icmp  --network=mynetwork --description=Allows ICMP connections from any source to any\                      instance on the network. --direction=INGRESS --priority=65534 --source-ranges=0.0.0.0/0 --action=ALLOW  --rules=icmp \
+              
+
+         * gcloud compute firewall-rules create mynetwork-allow-internal --project=qwiklabs-gcp-02-30a358d2da25 --network=mynetwork --description=Allows\                  connections from any source in the  network IP range to  any instance on the network using all protocols. --direction=INGRESS --priority=65534 \
+            --source-ranges=10.128.0.0/9 --action=ALLOW --rules=all  
+
+         * gcloud compute firewall-rules create mynetwork-allow-rdp  --network=mynetwork --description=Allows RDP connections from any source to any\                       instance on the network using port 3389. --direction=INGRESS --priority=65534 --source-ranges=0.0.0.0/0 --action=ALLOW --rules=tcp:3389\
+             
+
+         * gcloud compute firewall-rules create mynetwork-allow-ssh  --network=mynetwork --description=Allows TCP connections from any source to any\                      instance on the network using port 22. --direction=INGRESS --priority=65534 --source-ranges=0.0.0.0/0 --action=ALLOW --rules=tcp:22 \
+          
+
+      
+
+     iii. Record the IP address range for the subnets in us-central1 and europe-west1 by running the command:
+
+        * gcloud compute networks subnets list --network=mynetwork
+
+
+   b.   Create a VM instance in us-central1 by running the command:
+
+        * gcloud compute  instances create mynet-us-vm --zone=us-central1-c --machine-type=f1-micro --subnet=mynetwork  
+
+
+
+   c.    Create a VM instance in europe-west1 by running the command:
+       
+         * gcloud  compute instances create mynet-eu-vm --zone=europe-west1-c --machine-type=f1-micro --subnet=mynetwork
+
+
+#Task 3: Explore the connectivity for VM instances
+
+##steps:
+
+    a. Verify connectivity for the VM instances:
+
+        i. Note the external and internal IP addresses for mynet-eu-vm by running the command:
+
+           * gcloud compute instances list 
+
+       ii. run the command to connect to mynet-us-vm:
+
+            * gcloud compute ssh mynet-us-vm
+
+            - result: connection was successful
+
+      iii. To test connectivity to mynet-eu-vm's internal IP from mynet-us-vm, run the following command:
+          
+            * ping -c 3 10.132.0.2
+            - result: connection  to IP 10.132.0.2 was successful
+
+      iv. Repeat the same test by running the following command connecting to mynet-eu-vm's machine from mynet-us-vm using its hostname:
+
+           * ping -c 3 mynet-eu-vm
+
+           -  result: connection to hostname:mynet-eu-vm  was successful
+
+      v. To test connectivity to mynet-eu-vm's external IP, run the following command:
+
+           ping -c 3 35.233.48.103
+
+
+    b. Remove the allow-icmp firewall rules
+
+        i. Remove the allow-icmp firewall rule by running the command:
+           
+            *  gcloud compute firewall-rules delete mynetwork-allow-icmp 
+
+       ii. To test connectivity to mynet-eu-vm's internal IP, run the following command:
+
+           * ping -c 3 10.132.0.2
+ 
+           - result: 100% packet sent.
+    
+      iii. To test connectivity to mynet-eu-vm's external IP, run the following command:
+  
+           * ping -c 3 35.233.48.103
+
+           - result: 100% packet lost.
+
+
+    c. Remove the allow-internal firewall rules
+
+      
+       i. Remove the allow-internal firewall rule by running the command:
+
+          *  gcloud compute firewall-rules delete mynetwork-allow-internal
+ 
+
+      ii. To test connectivity to mynet-eu-vm's internal IP, run the following command
+
+          * ping -c 3  10.132.0.2 
+            
+          - result: 100% packet lost.
+
+
+     iii. Close the SSH terminal:
+            
+             * exit
+
+
+    d. Remove the allow-ssh firewall rules
+
+        i. Remove the  allow-ssh firewall  rule by running the command:
+
+          * gcloud compute firewall-rules delete mynetwork-allow-ssh 
+
+       ii.  For mynet-us-vm, run the following command to confirm if connection can be established successfuly:
+
+              * gcloud compute ssh mynet-us-vm
+
+            - result: connection was not successful  
+
+
+
+        
+
+
+
+
+
+
+
+
+
+
+      
+
+     
+    
+
+
+ 
+
+
+
+
+    
+ 
+
+  
+
