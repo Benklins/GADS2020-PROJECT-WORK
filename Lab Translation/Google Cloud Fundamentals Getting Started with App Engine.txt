@@ -91,9 +91,8 @@ In this lab, you learn how to perform the following tasks:
 # Steps:   
 
           a. run the command below to disable the application:
-
-              * gcloud app instances delete 00c61b117ce3ef2e82f864a52623c86cb16e11fae5b71befbc94450495d1d82f7047195e --service=default\
-                 --version=20200910t170151 
+          
+              * gcloud app versions stop 20200910t170151 
        
          b.  refresh the browser window  to view to the application site, 404 error will be displayed.  
           
